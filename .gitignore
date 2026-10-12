@@ -368,4 +368,3 @@ appsettings.*.json
 
 # Permitir que el archivo de ejemplo sí se suba a GitHub
 !appsettings.example.json
-
