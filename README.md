@@ -108,12 +108,3 @@ dotnet build
 # Iniciar servicio (por defecto en http://localhost:5054)
 dotnet run
 ```
-
-Interfaz Swagger: `http://localhost:5054/swagger`
-
----
-
-## 🔒 Seguridad
-
-- `appsettings.json` está excluido del seguimiento en `.gitignore`.
-- Las credenciales de producción deben ser configuradas mediante Variables de Entorno del sistema o contenedor (`ConnectionStrings__SqlServer`).
