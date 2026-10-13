@@ -6,7 +6,7 @@ namespace NominaDocAPI.Services
     public interface IArchivosService
     {
         ApiResponse<List<ReciboDocumentoDto>> VerificarRecibos(VerificarRecibosRequestDto dto);
-        (byte[]? ArchivoBytes, string ContentType, string NombreDescarga) ObtenerArchivo(int anio, int proceso, string nombreArchivo, string tipo);
+        (byte[]? ArchivoBytes, string ContentType, string NombreDescarga) ObtenerArchivo(int anio, int proceso, string nombreArchivo, string tipo, string? rfcCompania = null);
     }
 
     public class ArchivosService : IArchivosService
@@ -15,29 +15,30 @@ namespace NominaDocAPI.Services
 
         public ArchivosService(IConfiguration configuration)
         {
-            _directorioRaiz = configuration["DirectorioNominas"] ?? @"C:\\Facturacion\\Nomina";
+            _directorioRaiz = configuration["DirectorioNominas"] ?? @"C:\Facturacion\Nomina";
         }
 
         public ApiResponse<List<ReciboDocumentoDto>> VerificarRecibos(VerificarRecibosRequestDto dto)
         {
             var resultado = new List<ReciboDocumentoDto>();
 
-            if (dto.NumeroEmpleado <= 0 || dto.Periodos == null || !dto.Periodos.Any())
+            if (dto.NumeroEmpleado <= 0 || string.IsNullOrWhiteSpace(dto.RfcCompañia) || dto.Periodos == null || !dto.Periodos.Any())
             {
                 return new ApiResponse<List<ReciboDocumentoDto>>
                 {
                     Success = false,
-                    Message = "Parámetros de búsqueda inválidos.",
+                    Message = "Parámetros de búsqueda inválidos o RFC de compañía faltante.",
                     Data = resultado
                 };
             }
 
+            string rfcLimpio = dto.RfcCompañia.Trim();
             string numFormateado = dto.NumeroEmpleado.ToString("D8");
             string patronBase = $"{numFormateado}_{dto.NombreEmpleado.Trim()}";
 
             foreach (var per in dto.Periodos)
             {
-                string carpeta = Path.Combine(_directorioRaiz, per.Anio.ToString(), $"Per_{per.Proceso}");
+                string carpeta = Path.Combine(_directorioRaiz, rfcLimpio, per.Anio.ToString(), $"Per_{per.Proceso}");
 
                 if (!Directory.Exists(carpeta)) continue;
 
@@ -74,15 +75,29 @@ namespace NominaDocAPI.Services
             };
         }
 
-        public (byte[]? ArchivoBytes, string ContentType, string NombreDescarga) ObtenerArchivo(int anio, int proceso, string nombreArchivo, string tipo)
+        public (byte[]? ArchivoBytes, string ContentType, string NombreDescarga) ObtenerArchivo(int anio, int proceso, string nombreArchivo, string tipo, string? rfcCompania = null)
         {
             string ext = tipo.Trim().ToLower() == "xml" ? ".xml" : ".pdf";
             string contentType = ext == ".xml" ? "application/xml" : "application/pdf";
-            string rutaCompleta = Path.Combine(_directorioRaiz, anio.ToString(), $"Per_{proceso}", $"{nombreArchivo}{ext}");
 
-            if (!File.Exists(rutaCompleta))
+            string rutaCompleta = string.Empty;
+
+            if (!string.IsNullOrWhiteSpace(rfcCompania))
             {
-                return (null, string.Empty, string.Empty);
+                rutaCompleta = Path.Combine(_directorioRaiz, rfcCompania.Trim(), anio.ToString(), $"Per_{proceso}", $"{nombreArchivo}{ext}");
+            }
+
+            if (string.IsNullOrEmpty(rutaCompleta) || !File.Exists(rutaCompleta))
+            {
+                var encontrados = Directory.GetFiles(_directorioRaiz, $"{nombreArchivo}{ext}", SearchOption.AllDirectories);
+                if (encontrados.Length > 0)
+                {
+                    rutaCompleta = encontrados[0];
+                }
+                else
+                {
+                    return (null, string.Empty, string.Empty);
+                }
             }
 
             byte[] bytes = File.ReadAllBytes(rutaCompleta);

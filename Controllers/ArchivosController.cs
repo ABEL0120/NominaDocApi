@@ -24,9 +24,9 @@ namespace NominaDocAPI.Controllers
         }
 
         [HttpGet("descargar/{anio}/{proceso}/{tipo}/{archivo}")]
-        public IActionResult DescargarArchivo(int anio, int proceso, string tipo, string archivo)
+        public IActionResult DescargarArchivo(int anio, int proceso, string tipo, string archivo, [FromQuery] string? rfcCompania)
         {
-            var (bytes, contentType, nombreDescarga) = _archivosService.ObtenerArchivo(anio, proceso, archivo, tipo);
+            var (bytes, contentType, nombreDescarga) = _archivosService.ObtenerArchivo(anio, proceso, archivo, tipo, rfcCompania);
 
             if (bytes == null)
             {

@@ -4,6 +4,7 @@
     {
         public int NumeroEmpleado { get; set; }
         public string NombreEmpleado { get; set; } = string.Empty;
+        public string RfcCompañia { get; set; } = string.Empty;
         public List<PeriodoBusquedaDto> Periodos { get; set; } = new();
     }
 
@@ -14,6 +15,7 @@
         public string FechaInicio { get; set; } = string.Empty;
         public string FechaTermino { get; set; } = string.Empty;
         public string FechaPago { get; set; } = string.Empty;
+        public string RfcCompañia { get; set; } = string.Empty;
     }
 
     public class ReciboDocumentoDto
