@@ -34,7 +34,8 @@ namespace NominaDocAPI.Services
 
             string rfcLimpio = dto.RfcCompañia.Trim();
             string numFormateado = dto.NumeroEmpleado.ToString("D8");
-            string patronBase = $"{numFormateado}_{dto.NombreEmpleado.Trim()}";
+            string patron1 = $"{numFormateado}_{dto.ApellidoNombre.Trim()}";
+            string patron2 = $"{numFormateado}_{dto.NombreApellido.Trim()}";
 
             foreach (var per in dto.Periodos)
             {
@@ -42,8 +43,17 @@ namespace NominaDocAPI.Services
 
                 if (!Directory.Exists(carpeta)) continue;
 
-                string filtro = $"*{per.Proceso}_{patronBase}*";
-                var archivosEncontrados = Directory.GetFiles(carpeta, filtro);
+                var archivosEncontrados = Directory.GetFiles(carpeta, $"*{per.Proceso}_{patron1}*");
+
+                if (archivosEncontrados.Length == 0 && !string.IsNullOrWhiteSpace(dto.NombreApellido))
+                {
+                    archivosEncontrados = Directory.GetFiles(carpeta, $"*{per.Proceso}_{patron2}*");
+                }
+
+                if (archivosEncontrados.Length == 0)
+                {
+                    archivosEncontrados = Directory.GetFiles(carpeta, $"*{per.Proceso}*{numFormateado}*");
+                }
 
                 if (archivosEncontrados.Length == 0) continue;
 
