@@ -43,12 +43,12 @@ namespace NominaDocAPI.Services
 
                 if (!Directory.Exists(carpeta)) continue;
 
-                var archivosEncontrados = Directory.GetFiles(carpeta, $"*{per.Proceso}_{patron1}*");
+                var archivos1 = Directory.GetFiles(carpeta, $"*{per.Proceso}_{patron1}*");
+                var archivos2 = !string.IsNullOrWhiteSpace(dto.NombreApellido)
+                    ? Directory.GetFiles(carpeta, $"*{per.Proceso}_{patron2}*")
+                    : Array.Empty<string>();
 
-                if (archivosEncontrados.Length == 0 && !string.IsNullOrWhiteSpace(dto.NombreApellido))
-                {
-                    archivosEncontrados = Directory.GetFiles(carpeta, $"*{per.Proceso}_{patron2}*");
-                }
+                var archivosEncontrados = archivos1.Union(archivos2, StringComparer.OrdinalIgnoreCase).ToArray();
 
                 if (archivosEncontrados.Length == 0)
                 {
@@ -57,23 +57,28 @@ namespace NominaDocAPI.Services
 
                 if (archivosEncontrados.Length == 0) continue;
 
-                string baseName = Path.GetFileNameWithoutExtension(archivosEncontrados[0]);
-                bool tienePdf = archivosEncontrados.Any(a => a.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase));
-                bool tieneXml = archivosEncontrados.Any(a => a.EndsWith(".xml", StringComparison.OrdinalIgnoreCase));
+                var grupos = archivosEncontrados
+                    .GroupBy(a => Path.GetFileNameWithoutExtension(a), StringComparer.OrdinalIgnoreCase);
 
-                if (tienePdf || tieneXml)
+                foreach (var grupo in grupos)
                 {
-                    resultado.Add(new ReciboDocumentoDto
+                    bool tienePdf = grupo.Any(a => a.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase));
+                    bool tieneXml = grupo.Any(a => a.EndsWith(".xml", StringComparison.OrdinalIgnoreCase));
+
+                    if (tienePdf || tieneXml)
                     {
-                        Anio = per.Anio,
-                        Proceso = per.Proceso,
-                        FechaInicio = per.FechaInicio,
-                        FechaTermino = per.FechaTermino,
-                        FechaPago = per.FechaPago,
-                        NombreArchivo = baseName,
-                        TienePdf = tienePdf,
-                        TieneXml = tieneXml
-                    });
+                        resultado.Add(new ReciboDocumentoDto
+                        {
+                            Anio = per.Anio,
+                            Proceso = per.Proceso,
+                            FechaInicio = per.FechaInicio,
+                            FechaTermino = per.FechaTermino,
+                            FechaPago = per.FechaPago,
+                            NombreArchivo = grupo.Key,
+                            TienePdf = tienePdf,
+                            TieneXml = tieneXml
+                        });
+                    }
                 }
             }
 
